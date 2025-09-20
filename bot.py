@@ -28,8 +28,8 @@ ENTRANCE_SS_SUBJECTS = ["Maths", "English", "Civics", "Geography", "History", "E
 MINISTRY_LINK = "https://fetena.net/exam/ministry"
 MINISTRY_SUBJECTS = ["Maths", "English", "General Science", "Citizenship", "Social Study"]
 
-# --- Start Command ---
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+# --- /menu command ---
+async def menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
         [InlineKeyboardButton("📘 Textbook", callback_data="textbook")],
         [InlineKeyboardButton("🧑‍🏫 Teacher Guide", callback_data="teacherguide")],
@@ -37,13 +37,16 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [InlineKeyboardButton("🏛️ Ministry Exam", callback_data="ministry")]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.message.reply_text("👋 Welcome! Please choose an option:", reply_markup=reply_markup)
+    await update.message.reply_text("👋 Please choose an option:", reply_markup=reply_markup)
+
+# --- /start command ---
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await menu(update, context)
 
 # --- Button Handler ---
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
-
     data = query.data
 
     # --- Textbook ---
@@ -113,6 +116,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # --- Build and run bot ---
 app = Application.builder().token(TOKEN).build()
 app.add_handler(CommandHandler("start", start))
+app.add_handler(CommandHandler("menu", menu))
 app.add_handler(CallbackQueryHandler(button_handler))
 
 app.run_polling()
