@@ -2,7 +2,7 @@ import os
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
 
-# Get bot token from environment variable
+# Get token safely from Render environment
 TOKEN = os.getenv("BOT_TOKEN")
 
 # --- Links for Textbook and Teacher Guide ---
@@ -28,7 +28,7 @@ ENTRANCE_SS_SUBJECTS = ["Maths", "English", "Civics", "Geography", "History", "E
 MINISTRY_LINK = "https://fetena.net/exam/ministry"
 MINISTRY_SUBJECTS = ["Maths", "English", "General Science", "Citizenship", "Social Study"]
 
-# --- /menu command ---
+# --- Menu function ---
 async def menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
         [InlineKeyboardButton("📘 Textbook", callback_data="textbook")],
@@ -37,10 +37,15 @@ async def menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [InlineKeyboardButton("🏛️ Ministry Exam", callback_data="ministry")]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.message.reply_text("👋 Please choose an option:", reply_markup=reply_markup)
 
-# --- /start command ---
+    if update.message:
+        await update.message.reply_text("👋 Please choose an option:", reply_markup=reply_markup)
+    elif update.callback_query:
+        await update.callback_query.edit_message_text("👋 Please choose an option:", reply_markup=reply_markup)
+
+# --- Start command ---
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    print("⚡ /start command received")  # log for Render
     await menu(update, context)
 
 # --- Button Handler ---
@@ -113,10 +118,14 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         keyboard = [[InlineKeyboardButton(subj, url=MINISTRY_LINK)] for subj in MINISTRY_SUBJECTS]
         await query.edit_message_text("🏛️ Ministry Exam Subjects:", reply_markup=InlineKeyboardMarkup(keyboard))
 
-# --- Build and run bot ---
-app = Application.builder().token(TOKEN).build()
-app.add_handler(CommandHandler("start", start))
-app.add_handler(CommandHandler("menu", menu))
-app.add_handler(CallbackQueryHandler(button_handler))
+# --- Main ---
+if __name__ == "__main__":
+    app = Application.builder().token(TOKEN).build()
 
-app.run_polling()
+    # Handlers
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("menu", menu))
+    app.add_handler(CallbackQueryHandler(button_handler))
+
+    print("✅ Bot started and polling...")
+    app.run_polling()
