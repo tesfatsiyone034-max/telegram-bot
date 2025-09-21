@@ -2,8 +2,8 @@ from telegram import ReplyKeyboardMarkup, Update
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
 import os
 
-# Get token from environment variable (set in Fly.io secrets)
-TOKEN = os.getenv("BOT_TOKEN", "YOUR_BOT_TOKEN_HERE")
+# Get token from environment variable (for Render) or hardcode for Pydroid test
+TOKEN = os.getenv("BOT_TOKEN", "YOUR_TOKEN_HERE")
 
 def start(update: Update, context: CallbackContext):
     return menu(update, context)
@@ -118,3 +118,6 @@ def main():
     print("✅ Bot started...")
     updater.start_polling()
     updater.idle()
+
+if __name__ == "__main__":
+    main()
