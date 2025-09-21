@@ -1,12 +1,10 @@
-from telegram import ReplyKeyboardMarkup, InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram import ReplyKeyboardMarkup, Update
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
-
 import os
 
-# Get token from environment variable (Fly.io or local)
+# Get token from environment variable (set in Fly.io secrets)
 TOKEN = os.getenv("BOT_TOKEN", "YOUR_BOT_TOKEN_HERE")
 
-# --- Handlers ---
 def start(update: Update, context: CallbackContext):
     return menu(update, context)
 
@@ -98,11 +96,7 @@ def handle_message(update: Update, context: CallbackContext):
         reply_markup = ReplyKeyboardMarkup(subjects, resize_keyboard=True)
         update.message.reply_text("Choose subject:", reply_markup=reply_markup)
 
-    elif text in ["General Science", "Citizenship", "Social Study"]:
-        update.message.reply_text("📘 Opening Ministry Exam...")
-        update.message.reply_text("https://fetena.net/exam/ministry")
-
-    elif text in ["Maths", "English"]:
+    elif text in ["Maths", "English", "General Science", "Citizenship", "Social Study"]:
         update.message.reply_text("📘 Opening Ministry Exam...")
         update.message.reply_text("https://fetena.net/exam/ministry")
 
@@ -113,7 +107,6 @@ def handle_message(update: Update, context: CallbackContext):
     else:
         update.message.reply_text("❌ Unknown option. Use /start to return to menu.")
 
-# --- Main ---
 def main():
     updater = Updater(TOKEN, use_context=True)
     dp = updater.dispatcher
