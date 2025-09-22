@@ -1,22 +1,7 @@
 from telegram import ReplyKeyboardMarkup, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, filters
 
-# Get token from environment variable
-TOKEN = os.getenv("BOT_TOKEN", "YOUR_BOT_TOKEN_HERE")
-
-def start(update: Update, context: CallbackContext):
-    return menu(update, context)
-
-def menu(update: Update, context: CallbackContext):
-    main_menu = [
-        ["📘 Textbook", "👨‍🏫 Teacher Guide"],
-        ["📄 Entrance Exam", "🏛️ Ministry Exam"]
-    ]
-    reply_markup = ReplyKeyboardMarkup(main_menu, resize_keyboard=True)
-    update.message.reply_text("👋 Welcome! Choose an option:", reply_markup=reply_markup)
-
-def handle_message(update: Update, context: CallbackContext):
-    text = update.message.text
+TOKEN = "YOUR_BOT_TOKEN"
 
 # --- Start & Menu ---
 def start(update, context):
