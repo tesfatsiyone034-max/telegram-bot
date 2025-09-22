@@ -1,7 +1,8 @@
 from telegram import ReplyKeyboardMarkup, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, filters
 
-TOKEN = "YOUR_BOT_TOKEN"
+# Get token from environment variable (for Render) or hardcode for Pydroid test
+TOKEN = os.getenv("TELEGRAM_TOKEN")
 
 # --- Start & Menu ---
 def start(update, context):
