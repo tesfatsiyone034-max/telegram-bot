@@ -1,137 +1,130 @@
-from telegram import ReplyKeyboardMarkup, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, filters
+import logging
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, CallbackContext
 
-# Get token from environment variable (for Render) or hardcode for Pydroid test
-TOKEN = os.getenv("TELEGRAM_TOKEN")
+# Enable logging
+logging.basicConfig(
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
+)
+logger = logging.getLogger(__name__)
 
-# --- Start & Menu ---
-def start(update, context):
-    main_menu(update)
+# === Start Command ===
+def start(update: Update, context: CallbackContext):
+    return menu(update, context)
 
-def menu(update, context):
-    main_menu(update)
-
-def main_menu(update):
+# === Main Menu ===
+def menu(update: Update, context: CallbackContext):
     keyboard = [
-        ["📚 Textbooks", "📘 Teacher Guides"],
-        ["📝 Entrance Exam", "🏛 Ministry Exam"]
+        [InlineKeyboardButton("📚 Textbook", callback_data="textbook")],
+        [InlineKeyboardButton("📘 Teacher Guide", callback_data="teacherguide")],
+        [InlineKeyboardButton("📝 Entrance Exam", callback_data="entrance")],
+        [InlineKeyboardButton("🏛️ Ministry Exam", callback_data="ministry")],
     ]
-    reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
-    update.message.reply_text("📖 Welcome!\nChoose an option:", reply_markup=reply_markup)
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    update.message.reply_text("📖 Please choose:", reply_markup=reply_markup)
 
-# --- Handle Textbooks ---
-def handle_textbooks(update, context):
-    keyboard = [
-        [InlineKeyboardButton("📕 Primary Books", callback_data="primary_books")],
-        [InlineKeyboardButton("📗 Secondary Books", callback_data="secondary_books")]
-    ]
-    update.message.reply_text("Choose category:", reply_markup=InlineKeyboardMarkup(keyboard))
-
-def handle_teacher_guides(update, context):
-    keyboard = [
-        [InlineKeyboardButton("📕 Primary Guides", callback_data="primary_guides")],
-        [InlineKeyboardButton("📗 Secondary Guides", callback_data="secondary_guides")]
-    ]
-    update.message.reply_text("Choose category:", reply_markup=InlineKeyboardMarkup(keyboard))
-
-# --- Entrance Exam ---
-def handle_entrance(update, context):
-    keyboard = [
-        [InlineKeyboardButton("🔬 Natural Science", callback_data="entrance_natural")],
-        [InlineKeyboardButton("🌍 Social Science", callback_data="entrance_social")]
-    ]
-    update.message.reply_text("Choose stream:", reply_markup=InlineKeyboardMarkup(keyboard))
-
-# --- Ministry Exam ---
-def handle_ministry(update, context):
-    keyboard = [
-        [InlineKeyboardButton("📐 Maths", url="https://fetena.net/exam/ministry")],
-        [InlineKeyboardButton("📖 English", url="https://fetena.net/exam/ministry")],
-        [InlineKeyboardButton("🔬 General Science", url="https://fetena.net/exam/ministry")],
-        [InlineKeyboardButton("🧑‍🤝‍🧑 Citizenship", url="https://fetena.net/exam/ministry")],
-        [InlineKeyboardButton("🌍 Social Study", url="https://fetena.net/exam/ministry")]
-    ]
-    update.message.reply_text("Choose subject:", reply_markup=InlineKeyboardMarkup(keyboard))
-
-# --- Callback Handler ---
-def button_handler(update, context):
+# === Callback Handler ===
+def button(update: Update, context: CallbackContext):
     query = update.callback_query
     query.answer()
 
-    # Primary / Secondary books
-    if query.data == "primary_books":
-        query.edit_message_text("📕 Primary Books: Coming soon")
-    elif query.data == "secondary_books":
+    # Textbook & Teacher Guide
+    if query.data == "textbook":
+        keyboard = [
+            [InlineKeyboardButton("Primary Books", callback_data="primary_textbook")],
+            [InlineKeyboardButton("Secondary Books", callback_data="secondary_textbook")],
+        ]
+        query.edit_message_text("Choose book type:", reply_markup=InlineKeyboardMarkup(keyboard))
+
+    elif query.data == "teacherguide":
+        keyboard = [
+            [InlineKeyboardButton("Primary Books", callback_data="primary_tg")],
+            [InlineKeyboardButton("Secondary Books", callback_data="secondary_tg")],
+        ]
+        query.edit_message_text("Choose teacher guide:", reply_markup=InlineKeyboardMarkup(keyboard))
+
+    # Primary Placeholder
+    elif query.data in ["primary_textbook", "primary_tg"]:
+        query.edit_message_text("📌 Coming soon...")
+
+    # Secondary Textbook
+    elif query.data == "secondary_textbook":
         keyboard = [
             [InlineKeyboardButton("Grade 9", url="https://t.me/EthioBookGrade1_12/57?single")],
             [InlineKeyboardButton("Grade 10", url="https://t.me/EthioBookGrade1_12/80?single")],
             [InlineKeyboardButton("Grade 11", url="https://t.me/EthioBookGrade1_12/102?single")],
-            [InlineKeyboardButton("Grade 12", callback_data="coming_soon")]
+            [InlineKeyboardButton("Grade 12", callback_data="comingsoon")],
         ]
-        query.edit_message_text("📗 Secondary Books:", reply_markup=InlineKeyboardMarkup(keyboard))
+        query.edit_message_text("📘 Choose a grade:", reply_markup=InlineKeyboardMarkup(keyboard))
 
-    elif query.data == "primary_guides":
-        query.edit_message_text("📘 Primary Guides: Coming soon")
-    elif query.data == "secondary_guides":
+    # Secondary Teacher Guide
+    elif query.data == "secondary_tg":
         keyboard = [
             [InlineKeyboardButton("Grade 9", url="https://t.me/EthioBookGrade1_12/67")],
             [InlineKeyboardButton("Grade 10", url="https://t.me/EthioBookGrade1_12/91?single")],
             [InlineKeyboardButton("Grade 11", url="https://t.me/EthioBookGrade1_12/113?single")],
-            [InlineKeyboardButton("Grade 12", url="https://t.me/EthioBookGrade1_12/123?single")]
+            [InlineKeyboardButton("Grade 12", url="https://t.me/EthioBookGrade1_12/123?single")],
         ]
-        query.edit_message_text("📘 Secondary Teacher Guides:", reply_markup=InlineKeyboardMarkup(keyboard))
+        query.edit_message_text("📘 Choose a grade:", reply_markup=InlineKeyboardMarkup(keyboard))
 
-    # Entrance Exams
+    # Entrance Exam
+    elif query.data == "entrance":
+        keyboard = [
+            [InlineKeyboardButton("Natural Science", callback_data="entrance_natural")],
+            [InlineKeyboardButton("Social Science", callback_data="entrance_social")],
+        ]
+        query.edit_message_text("📝 Entrance Exam - Choose stream:", reply_markup=InlineKeyboardMarkup(keyboard))
+
     elif query.data == "entrance_natural":
         keyboard = [
-            [InlineKeyboardButton("📐 Maths", url="https://fetena.net/exam/entrance")],
-            [InlineKeyboardButton("📖 English", url="https://fetena.net/exam/entrance")],
-            [InlineKeyboardButton("🧪 Chemistry", url="https://fetena.net/exam/entrance")],
-            [InlineKeyboardButton("⚡ Physics", url="https://fetena.net/exam/entrance")],
-            [InlineKeyboardButton("🧬 Biology", url="https://fetena.net/exam/entrance")],
-            [InlineKeyboardButton("🧠 Aptitude", url="https://fetena.net/exam/entrance")]
+            [InlineKeyboardButton("Maths", url="https://fetena.net/exam/entrance")],
+            [InlineKeyboardButton("English", url="https://fetena.net/exam/entrance")],
+            [InlineKeyboardButton("Chemistry", url="https://fetena.net/exam/entrance")],
+            [InlineKeyboardButton("Physics", url="https://fetena.net/exam/entrance")],
+            [InlineKeyboardButton("Biology", url="https://fetena.net/exam/entrance")],
+            [InlineKeyboardButton("Aptitude", url="https://fetena.net/exam/entrance")],
         ]
-        query.edit_message_text("🔬 Natural Science Entrance:", reply_markup=InlineKeyboardMarkup(keyboard))
+        query.edit_message_text("📘 Natural Science Subjects:", reply_markup=InlineKeyboardMarkup(keyboard))
 
     elif query.data == "entrance_social":
         keyboard = [
-            [InlineKeyboardButton("📐 Maths", url="https://fetena.net/exam/entrance")],
-            [InlineKeyboardButton("📖 English", url="https://fetena.net/exam/entrance")],
-            [InlineKeyboardButton("⚖ Civics", url="https://fetena.net/exam/entrance")],
-            [InlineKeyboardButton("🌍 Geography", url="https://fetena.net/exam/entrance")],
-            [InlineKeyboardButton("📜 History", url="https://fetena.net/exam/entrance")],
-            [InlineKeyboardButton("💰 Economics", url="https://fetena.net/exam/entrance")],
-            [InlineKeyboardButton("🧠 Aptitude", url="https://fetena.net/exam/entrance")]
+            [InlineKeyboardButton("Maths", url="https://fetena.net/exam/entrance")],
+            [InlineKeyboardButton("English", url="https://fetena.net/exam/entrance")],
+            [InlineKeyboardButton("Civics", url="https://fetena.net/exam/entrance")],
+            [InlineKeyboardButton("Geography", url="https://fetena.net/exam/entrance")],
+            [InlineKeyboardButton("History", url="https://fetena.net/exam/entrance")],
+            [InlineKeyboardButton("Economics", url="https://fetena.net/exam/entrance")],
         ]
-        query.edit_message_text("🌍 Social Science Entrance:", reply_markup=InlineKeyboardMarkup(keyboard))
+        query.edit_message_text("📘 Social Science Subjects:", reply_markup=InlineKeyboardMarkup(keyboard))
 
-    elif query.data == "coming_soon":
-        query.edit_message_text("⏳ Coming soon...")
+    # Ministry Exam
+    elif query.data == "ministry":
+        keyboard = [
+            [InlineKeyboardButton("Maths", url="https://fetena.net/exam/ministry")],
+            [InlineKeyboardButton("English", url="https://fetena.net/exam/ministry")],
+            [InlineKeyboardButton("General Science", url="https://fetena.net/exam/ministry")],
+            [InlineKeyboardButton("Citizenship", url="https://fetena.net/exam/ministry")],
+            [InlineKeyboardButton("Social Study", url="https://fetena.net/exam/ministry")],
+        ]
+        query.edit_message_text("🏛️ Ministry Exam Subjects:", reply_markup=InlineKeyboardMarkup(keyboard))
 
-# --- Handle Text Inputs ---
-def handle_message(update, context):
-    text = update.message.text
-    if text == "📚 Textbooks":
-        handle_textbooks(update, context)
-    elif text == "📘 Teacher Guides":
-        handle_teacher_guides(update, context)
-    elif text == "📝 Entrance Exam":
-        handle_entrance(update, context)
-    elif text == "🏛 Ministry Exam":
-        handle_ministry(update, context)
-    else:
-        update.message.reply_text("Please use the menu buttons.")
+    # Coming soon
+    elif query.data == "comingsoon":
+        query.edit_message_text("📌 Coming soon...")
 
-# --- Main ---
+# === Main Function ===
 def main():
-    app = Application.builder().token(TOKEN).build()
+    import os
+    TOKEN = os.getenv("BOT_TOKEN")  # Set in Render Environment Variables
+    updater = Updater(TOKEN, use_context=True)
+    dp = updater.dispatcher
 
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("menu", menu))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-    app.add_handler(CallbackQueryHandler(button_handler))
+    dp.add_handler(CommandHandler("start", start))
+    dp.add_handler(CommandHandler("menu", menu))
+    dp.add_handler(CallbackQueryHandler(button))
 
-    app.run_polling()
+    updater.start_polling()
+    updater.idle()
 
 if __name__ == "__main__":
     main()
