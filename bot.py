@@ -1,141 +1,136 @@
-import os
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
+from telegram import ReplyKeyboardMarkup, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, filters
 
-# --- Get Bot Token from environment variable ---
-TOKEN = os.getenv("BOT_TOKEN")  # Set your token in environment variable BOT_TOKEN
+TOKEN = "YOUR_BOT_TOKEN"
 
-# --- Links ---
-TEXTBOOK_PRIMARY_LINKS = {f"Grade{i}": "https://t.me/EthioBookGrade1_12/comingsoon" for i in range(1, 9)}
-TEXTBOOK_SECONDARY_LINKS = {
-    "Grade9": "https://t.me/EthioBookGrade1_12/57?single",
-    "Grade10": "https://t.me/EthioBookGrade1_12/80?single",
-    "Grade11": "https://t.me/EthioBookGrade1_12/102?single",
-    "Grade12": "https://t.me/EthioBookGrade1_12/comingsoon"
-}
+# --- Start & Menu ---
+def start(update, context):
+    main_menu(update)
 
-TEACHERGUIDE_PRIMARY_LINKS = {f"Grade{i}": "https://t.me/EthioBookGrade1_12/comingsoon" for i in range(1, 9)}
-TEACHERGUIDE_SECONDARY_LINKS = {
-    "Grade9": "https://t.me/EthioBookGrade1_12/67",
-    "Grade10": "https://t.me/EthioBookGrade1_12/91?single",
-    "Grade11": "https://t.me/EthioBookGrade1_12/113?single",
-    "Grade12": "https://t.me/EthioBookGrade1_12/123?single"
-}
+def menu(update, context):
+    main_menu(update)
 
-ENTRANCE_LINK = "https://fetena.net/exam/entrance"
-ENTRANCE_NS_SUBJECTS = ["Maths", "English", "Chemistry", "Physics", "Biology", "Aptitude"]
-ENTRANCE_SS_SUBJECTS = ["Maths", "English", "Civics", "Geography", "History", "Economics"]
-
-MINISTRY_LINK = "https://fetena.net/exam/ministry"
-MINISTRY_SUBJECTS = ["Maths", "English", "General Science", "Citizenship", "Social Study"]
-
-# --- Helper function to generate grade buttons ---
-def grade_buttons(links_dict):
-    buttons = [[InlineKeyboardButton(grade, url=url)] for grade, url in links_dict.items()]
-    buttons.append([InlineKeyboardButton("🔙 Back", callback_data="back_to_menu")])
-    return buttons
-
-# --- Main Menu ---
-async def menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
+def main_menu(update):
     keyboard = [
-        [InlineKeyboardButton("📘 Textbook", callback_data="textbook")],
-        [InlineKeyboardButton("🧑‍🏫 Teacher Guide", callback_data="teacherguide")],
-        [InlineKeyboardButton("📄 Entrance Exam", callback_data="entrance")],
-        [InlineKeyboardButton("🏛️ Ministry Exam", callback_data="ministry")]
+        ["📚 Textbooks", "📘 Teacher Guides"],
+        ["📝 Entrance Exam", "🏛 Ministry Exam"]
     ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
+    reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
+    update.message.reply_text("📖 Welcome!\nChoose an option:", reply_markup=reply_markup)
 
-    if update.message:
-        await update.message.reply_text("👋 Please choose an option:", reply_markup=reply_markup)
-    elif update.callback_query:
-        await update.callback_query.edit_message_text("👋 Please choose an option:", reply_markup=reply_markup)
+# --- Handle Textbooks ---
+def handle_textbooks(update, context):
+    keyboard = [
+        [InlineKeyboardButton("📕 Primary Books", callback_data="primary_books")],
+        [InlineKeyboardButton("📗 Secondary Books", callback_data="secondary_books")]
+    ]
+    update.message.reply_text("Choose category:", reply_markup=InlineKeyboardMarkup(keyboard))
 
-# --- Start Command ---
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    print("⚡ /start command received")
-    await menu(update, context)
+def handle_teacher_guides(update, context):
+    keyboard = [
+        [InlineKeyboardButton("📕 Primary Guides", callback_data="primary_guides")],
+        [InlineKeyboardButton("📗 Secondary Guides", callback_data="secondary_guides")]
+    ]
+    update.message.reply_text("Choose category:", reply_markup=InlineKeyboardMarkup(keyboard))
 
-# --- Button Handler ---
-async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+# --- Entrance Exam ---
+def handle_entrance(update, context):
+    keyboard = [
+        [InlineKeyboardButton("🔬 Natural Science", callback_data="entrance_natural")],
+        [InlineKeyboardButton("🌍 Social Science", callback_data="entrance_social")]
+    ]
+    update.message.reply_text("Choose stream:", reply_markup=InlineKeyboardMarkup(keyboard))
+
+# --- Ministry Exam ---
+def handle_ministry(update, context):
+    keyboard = [
+        [InlineKeyboardButton("📐 Maths", url="https://fetena.net/exam/ministry")],
+        [InlineKeyboardButton("📖 English", url="https://fetena.net/exam/ministry")],
+        [InlineKeyboardButton("🔬 General Science", url="https://fetena.net/exam/ministry")],
+        [InlineKeyboardButton("🧑‍🤝‍🧑 Citizenship", url="https://fetena.net/exam/ministry")],
+        [InlineKeyboardButton("🌍 Social Study", url="https://fetena.net/exam/ministry")]
+    ]
+    update.message.reply_text("Choose subject:", reply_markup=InlineKeyboardMarkup(keyboard))
+
+# --- Callback Handler ---
+def button_handler(update, context):
     query = update.callback_query
-    await query.answer()
-    data = query.data
+    query.answer()
 
-    # --- Back Button ---
-    if data == "back_to_menu":
-        await menu(update, context)
-        return
-
-    # --- Textbook Menu ---
-    if data == "textbook":
+    # Primary / Secondary books
+    if query.data == "primary_books":
+        query.edit_message_text("📕 Primary Books: Coming soon")
+    elif query.data == "secondary_books":
         keyboard = [
-            [InlineKeyboardButton("📚 Primary Books (Grades 1-8)", callback_data="textbook_primary")],
-            [InlineKeyboardButton("🎓 Secondary Books (Grades 9-12)", callback_data="textbook_secondary")],
-            [InlineKeyboardButton("🔙 Back", callback_data="back_to_menu")]
+            [InlineKeyboardButton("Grade 9", url="https://t.me/EthioBookGrade1_12/57?single")],
+            [InlineKeyboardButton("Grade 10", url="https://t.me/EthioBookGrade1_12/80?single")],
+            [InlineKeyboardButton("Grade 11", url="https://t.me/EthioBookGrade1_12/102?single")],
+            [InlineKeyboardButton("Grade 12", callback_data="coming_soon")]
         ]
-        await query.edit_message_text("📘 Choose Primary or Secondary Books:", reply_markup=InlineKeyboardMarkup(keyboard))
+        query.edit_message_text("📗 Secondary Books:", reply_markup=InlineKeyboardMarkup(keyboard))
 
-    elif data == "textbook_primary":
-        keyboard = grade_buttons(TEXTBOOK_PRIMARY_LINKS)
-        await query.edit_message_text("📚 Select your grade:", reply_markup=InlineKeyboardMarkup(keyboard))
-
-    elif data == "textbook_secondary":
-        keyboard = grade_buttons(TEXTBOOK_SECONDARY_LINKS)
-        await query.edit_message_text("🎓 Select your grade:", reply_markup=InlineKeyboardMarkup(keyboard))
-
-    # --- Teacher Guide Menu ---
-    elif data == "teacherguide":
+    elif query.data == "primary_guides":
+        query.edit_message_text("📘 Primary Guides: Coming soon")
+    elif query.data == "secondary_guides":
         keyboard = [
-            [InlineKeyboardButton("📚 Primary Books (Grades 1-8)", callback_data="teacherguide_primary")],
-            [InlineKeyboardButton("🎓 Secondary Books (Grades 9-12)", callback_data="teacherguide_secondary")],
-            [InlineKeyboardButton("🔙 Back", callback_data="back_to_menu")]
+            [InlineKeyboardButton("Grade 9", url="https://t.me/EthioBookGrade1_12/67")],
+            [InlineKeyboardButton("Grade 10", url="https://t.me/EthioBookGrade1_12/91?single")],
+            [InlineKeyboardButton("Grade 11", url="https://t.me/EthioBookGrade1_12/113?single")],
+            [InlineKeyboardButton("Grade 12", url="https://t.me/EthioBookGrade1_12/123?single")]
         ]
-        await query.edit_message_text("🧑‍🏫 Choose Primary or Secondary Books:", reply_markup=InlineKeyboardMarkup(keyboard))
+        query.edit_message_text("📘 Secondary Teacher Guides:", reply_markup=InlineKeyboardMarkup(keyboard))
 
-    elif data == "teacherguide_primary":
-        keyboard = grade_buttons(TEACHERGUIDE_PRIMARY_LINKS)
-        await query.edit_message_text("📚 Select your grade:", reply_markup=InlineKeyboardMarkup(keyboard))
-
-    elif data == "teacherguide_secondary":
-        keyboard = grade_buttons(TEACHERGUIDE_SECONDARY_LINKS)
-        await query.edit_message_text("🎓 Select your grade:", reply_markup=InlineKeyboardMarkup(keyboard))
-
-    # --- Entrance Exam ---
-    elif data == "entrance":
+    # Entrance Exams
+    elif query.data == "entrance_natural":
         keyboard = [
-            [InlineKeyboardButton("🧪 Natural Science", callback_data="entrance_ns")],
-            [InlineKeyboardButton("🌍 Social Science", callback_data="entrance_ss")],
-            [InlineKeyboardButton("🔙 Back", callback_data="back_to_menu")]
+            [InlineKeyboardButton("📐 Maths", url="https://fetena.net/exam/entrance")],
+            [InlineKeyboardButton("📖 English", url="https://fetena.net/exam/entrance")],
+            [InlineKeyboardButton("🧪 Chemistry", url="https://fetena.net/exam/entrance")],
+            [InlineKeyboardButton("⚡ Physics", url="https://fetena.net/exam/entrance")],
+            [InlineKeyboardButton("🧬 Biology", url="https://fetena.net/exam/entrance")],
+            [InlineKeyboardButton("🧠 Aptitude", url="https://fetena.net/exam/entrance")]
         ]
-        await query.edit_message_text("📄 Choose your exam category:", reply_markup=InlineKeyboardMarkup(keyboard))
+        query.edit_message_text("🔬 Natural Science Entrance:", reply_markup=InlineKeyboardMarkup(keyboard))
 
-    elif data == "entrance_ns":
-        keyboard = [[InlineKeyboardButton(subj, url=ENTRANCE_LINK)] for subj in ENTRANCE_NS_SUBJECTS]
-        keyboard.append([InlineKeyboardButton("🔙 Back", callback_data="entrance")])
-        await query.edit_message_text("🧪 Natural Science Subjects:", reply_markup=InlineKeyboardMarkup(keyboard))
+    elif query.data == "entrance_social":
+        keyboard = [
+            [InlineKeyboardButton("📐 Maths", url="https://fetena.net/exam/entrance")],
+            [InlineKeyboardButton("📖 English", url="https://fetena.net/exam/entrance")],
+            [InlineKeyboardButton("⚖ Civics", url="https://fetena.net/exam/entrance")],
+            [InlineKeyboardButton("🌍 Geography", url="https://fetena.net/exam/entrance")],
+            [InlineKeyboardButton("📜 History", url="https://fetena.net/exam/entrance")],
+            [InlineKeyboardButton("💰 Economics", url="https://fetena.net/exam/entrance")],
+            [InlineKeyboardButton("🧠 Aptitude", url="https://fetena.net/exam/entrance")]
+        ]
+        query.edit_message_text("🌍 Social Science Entrance:", reply_markup=InlineKeyboardMarkup(keyboard))
 
-    elif data == "entrance_ss":
-        keyboard = [[InlineKeyboardButton(subj, url=ENTRANCE_LINK)] for subj in ENTRANCE_SS_SUBJECTS]
-        keyboard.append([InlineKeyboardButton("🔙 Back", callback_data="entrance")])
-        await query.edit_message_text("🌍 Social Science Subjects:", reply_markup=InlineKeyboardMarkup(keyboard))
+    elif query.data == "coming_soon":
+        query.edit_message_text("⏳ Coming soon...")
 
-    # --- Ministry Exam ---
-    elif data == "ministry":
-        keyboard = [[InlineKeyboardButton(subj, url=MINISTRY_LINK)] for subj in MINISTRY_SUBJECTS]
-        keyboard.append([InlineKeyboardButton("🔙 Back", callback_data="back_to_menu")])
-        await query.edit_message_text("🏛️ Ministry Exam Subjects:", reply_markup=InlineKeyboardMarkup(keyboard))
-
-    # --- Default fallback ---
+# --- Handle Text Inputs ---
+def handle_message(update, context):
+    text = update.message.text
+    if text == "📚 Textbooks":
+        handle_textbooks(update, context)
+    elif text == "📘 Teacher Guides":
+        handle_teacher_guides(update, context)
+    elif text == "📝 Entrance Exam":
+        handle_entrance(update, context)
+    elif text == "🏛 Ministry Exam":
+        handle_ministry(update, context)
     else:
-        await query.edit_message_text("❌ Invalid option. Please try again.", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back", callback_data="back_to_menu")]]))
+        update.message.reply_text("Please use the menu buttons.")
 
 # --- Main ---
-if __name__ == "__main__":
+def main():
     app = Application.builder().token(TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("menu", menu))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.add_handler(CallbackQueryHandler(button_handler))
 
-    print("✅ Bot started and polling...")
     app.run_polling()
+
+if __name__ == "__main__":
+    main()
