@@ -1,7 +1,7 @@
 from telegram import ReplyKeyboardMarkup, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, filters
 
-TOKEN = "YOUR_BOT_TOKEN"
+TOKEN = "BOT_TOKEN"
 
 # --- Start & Menu ---
 def start(update, context):
