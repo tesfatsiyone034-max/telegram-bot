@@ -2,8 +2,14 @@ import os
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
 
-# --- Get Bot Token from environment variable ---
-TOKEN = os.getenv("BOT_TOKEN")  # Set your token in environment variable BOT_TOKEN
+from flask import Flask, request
+
+# --- Get Bot Token ---
+TOKEN = os.getenv("BOT_TOKEN")
+WEBHOOK_URL = os.getenv("WEBHOOK_URL")  # e.g. https://your-app.onrender.com/webhook
+
+# --- Flask app for webhook ---
+flask_app = Flask(__name__)
 
 # --- Links ---
 TEXTBOOK_PRIMARY_LINKS = {f"Grade{i}": "https://t.me/EthioBookGrade1_12/comingsoon" for i in range(1, 9)}
@@ -13,7 +19,6 @@ TEXTBOOK_SECONDARY_LINKS = {
     "Grade11": "https://t.me/EthioBookGrade1_12/102?single",
     "Grade12": "https://t.me/EthioBookGrade1_12/comingsoon"
 }
-
 TEACHERGUIDE_PRIMARY_LINKS = {f"Grade{i}": "https://t.me/EthioBookGrade1_12/comingsoon" for i in range(1, 9)}
 TEACHERGUIDE_SECONDARY_LINKS = {
     "Grade9": "https://t.me/EthioBookGrade1_12/67",
@@ -35,7 +40,7 @@ def grade_buttons(links_dict):
     buttons.append([InlineKeyboardButton("🔙 Back", callback_data="back_to_menu")])
     return buttons
 
-# --- Main Menu ---
+# --- Menu ---
 async def menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
         [InlineKeyboardButton("📘 Textbook", callback_data="textbook")],
@@ -50,9 +55,8 @@ async def menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif update.callback_query:
         await update.callback_query.edit_message_text("👋 Please choose an option:", reply_markup=reply_markup)
 
-# --- Start Command ---
+# --- Start ---
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    print("⚡ /start command received")
     await menu(update, context)
 
 # --- Button Handler ---
@@ -61,81 +65,86 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
     data = query.data
 
-    # --- Back Button ---
     if data == "back_to_menu":
         await menu(update, context)
         return
 
-    # --- Textbook Menu ---
     if data == "textbook":
         keyboard = [
-            [InlineKeyboardButton("📚 Primary Books (Grades 1-8)", callback_data="textbook_primary")],
-            [InlineKeyboardButton("🎓 Secondary Books (Grades 9-12)", callback_data="textbook_secondary")],
+            [InlineKeyboardButton("📚 Primary (1–8)", callback_data="textbook_primary")],
+            [InlineKeyboardButton("🎓 Secondary (9–12)", callback_data="textbook_secondary")],
             [InlineKeyboardButton("🔙 Back", callback_data="back_to_menu")]
         ]
-        await query.edit_message_text("📘 Choose Primary or Secondary Books:", reply_markup=InlineKeyboardMarkup(keyboard))
+        await query.edit_message_text("📘 Choose books:", reply_markup=InlineKeyboardMarkup(keyboard))
 
     elif data == "textbook_primary":
-        keyboard = grade_buttons(TEXTBOOK_PRIMARY_LINKS)
-        await query.edit_message_text("📚 Select your grade:", reply_markup=InlineKeyboardMarkup(keyboard))
+        await query.edit_message_text("📚 Select grade:", reply_markup=InlineKeyboardMarkup(grade_buttons(TEXTBOOK_PRIMARY_LINKS)))
 
     elif data == "textbook_secondary":
-        keyboard = grade_buttons(TEXTBOOK_SECONDARY_LINKS)
-        await query.edit_message_text("🎓 Select your grade:", reply_markup=InlineKeyboardMarkup(keyboard))
+        await query.edit_message_text("🎓 Select grade:", reply_markup=InlineKeyboardMarkup(grade_buttons(TEXTBOOK_SECONDARY_LINKS)))
 
-    # --- Teacher Guide Menu ---
     elif data == "teacherguide":
         keyboard = [
-            [InlineKeyboardButton("📚 Primary Books (Grades 1-8)", callback_data="teacherguide_primary")],
-            [InlineKeyboardButton("🎓 Secondary Books (Grades 9-12)", callback_data="teacherguide_secondary")],
+            [InlineKeyboardButton("📚 Primary (1–8)", callback_data="teacherguide_primary")],
+            [InlineKeyboardButton("🎓 Secondary (9–12)", callback_data="teacherguide_secondary")],
             [InlineKeyboardButton("🔙 Back", callback_data="back_to_menu")]
         ]
-        await query.edit_message_text("🧑‍🏫 Choose Primary or Secondary Books:", reply_markup=InlineKeyboardMarkup(keyboard))
+        await query.edit_message_text("🧑‍🏫 Choose guides:", reply_markup=InlineKeyboardMarkup(keyboard))
 
     elif data == "teacherguide_primary":
-        keyboard = grade_buttons(TEACHERGUIDE_PRIMARY_LINKS)
-        await query.edit_message_text("📚 Select your grade:", reply_markup=InlineKeyboardMarkup(keyboard))
+        await query.edit_message_text("📚 Select grade:", reply_markup=InlineKeyboardMarkup(grade_buttons(TEACHERGUIDE_PRIMARY_LINKS)))
 
     elif data == "teacherguide_secondary":
-        keyboard = grade_buttons(TEACHERGUIDE_SECONDARY_LINKS)
-        await query.edit_message_text("🎓 Select your grade:", reply_markup=InlineKeyboardMarkup(keyboard))
+        await query.edit_message_text("🎓 Select grade:", reply_markup=InlineKeyboardMarkup(grade_buttons(TEACHERGUIDE_SECONDARY_LINKS)))
 
-    # --- Entrance Exam ---
     elif data == "entrance":
         keyboard = [
             [InlineKeyboardButton("🧪 Natural Science", callback_data="entrance_ns")],
             [InlineKeyboardButton("🌍 Social Science", callback_data="entrance_ss")],
             [InlineKeyboardButton("🔙 Back", callback_data="back_to_menu")]
         ]
-        await query.edit_message_text("📄 Choose your exam category:", reply_markup=InlineKeyboardMarkup(keyboard))
+        await query.edit_message_text("📄 Choose exam category:", reply_markup=InlineKeyboardMarkup(keyboard))
 
     elif data == "entrance_ns":
         keyboard = [[InlineKeyboardButton(subj, url=ENTRANCE_LINK)] for subj in ENTRANCE_NS_SUBJECTS]
         keyboard.append([InlineKeyboardButton("🔙 Back", callback_data="entrance")])
-        await query.edit_message_text("🧪 Natural Science Subjects:", reply_markup=InlineKeyboardMarkup(keyboard))
+        await query.edit_message_text("🧪 Natural Science:", reply_markup=InlineKeyboardMarkup(keyboard))
 
     elif data == "entrance_ss":
         keyboard = [[InlineKeyboardButton(subj, url=ENTRANCE_LINK)] for subj in ENTRANCE_SS_SUBJECTS]
         keyboard.append([InlineKeyboardButton("🔙 Back", callback_data="entrance")])
-        await query.edit_message_text("🌍 Social Science Subjects:", reply_markup=InlineKeyboardMarkup(keyboard))
+        await query.edit_message_text("🌍 Social Science:", reply_markup=InlineKeyboardMarkup(keyboard))
 
-    # --- Ministry Exam ---
     elif data == "ministry":
         keyboard = [[InlineKeyboardButton(subj, url=MINISTRY_LINK)] for subj in MINISTRY_SUBJECTS]
         keyboard.append([InlineKeyboardButton("🔙 Back", callback_data="back_to_menu")])
-        await query.edit_message_text("🏛️ Ministry Exam Subjects:", reply_markup=InlineKeyboardMarkup(keyboard))
+        await query.edit_message_text("🏛 Ministry Exam:", reply_markup=InlineKeyboardMarkup(keyboard))
 
-    # --- Default fallback ---
     else:
-        await query.edit_message_text("❌ Invalid option. Please try again.", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back", callback_data="back_to_menu")]]))
+        await query.edit_message_text("❌ Invalid option", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back", callback_data="back_to_menu")]]))
 
-# --- Main ---
+# --- Telegram Application ---
+app = Application.builder().token(TOKEN).build()
+app.add_handler(CommandHandler("start", start))
+app.add_handler(CommandHandler("menu", menu))
+app.add_handler(CallbackQueryHandler(button_handler))
+
+# --- Webhook Endpoint ---
+@flask_app.route("/webhook", methods=["POST"])
+def webhook():
+    update = Update.de_json(request.get_json(force=True), app.bot)
+    app.update_queue.put_nowait(update)
+    return "ok", 200
+
+# --- Start Flask Server and Set Webhook ---
 if __name__ == "__main__":
-    app = Application.builder().token(TOKEN).build()
+    import asyncio
 
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("menu", menu))
-    app.add_handler(CallbackQueryHandler(button_handler))
+    # Set webhook once at startup
+    async def set_webhook():
+        await app.bot.set_webhook(WEBHOOK_URL)
 
-    print("✅ Bot started and polling...")
-    app.run_polling()
+    asyncio.get_event_loop().run_until_complete(set_webhook())
+
+    port = int(os.getenv("PORT", 8080))
+    flask_app.run(host="0.0.0.0", port=port)
