@@ -1,7 +1,7 @@
 from telegram import ReplyKeyboardMarkup, Update
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
 
-TOKEN ="BOT_TOKEN""
+TOKEN = os.getenv("BOT_TOKEN")
 
 # Define menu structure
 menus = {
