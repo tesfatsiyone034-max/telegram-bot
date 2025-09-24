@@ -1,10 +1,9 @@
 import os
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
-
 from flask import Flask, request
 
-# --- Get Bot Token ---
+# --- Bot Token and Webhook URL ---
 TOKEN = os.getenv("BOT_TOKEN")
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")  # e.g. https://your-app.onrender.com/webhook
 
@@ -140,11 +139,12 @@ def webhook():
 if __name__ == "__main__":
     import asyncio
 
-    # Set webhook once at startup
-    async def set_webhook():
+    async def main():
+        # Set webhook
         await app.bot.set_webhook(WEBHOOK_URL)
 
-    asyncio.get_event_loop().run_until_complete(set_webhook())
+        # Run Flask server
+        port = int(os.getenv("PORT", 8080))
+        flask_app.run(host="0.0.0.0", port=port)
 
-    port = int(os.getenv("PORT", 8080))
-    flask_app.run(host="0.0.0.0", port=port)
+    asyncio.run(main())
