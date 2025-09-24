@@ -1,75 +1,39 @@
-from telegram import ReplyKeyboardMarkup, Update
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
+import os
+import asyncio
+from flask import Flask, request
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
 
 TOKEN = os.getenv("BOT_TOKEN")
+WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 
-# Define menu structure
-menus = {
-    "main": [
-        ["📘 Textbook", "🧑‍🏫 Teacher Guide"],
-        ["📄 Entrance Exam", "🏛️ Ministry Exam"]
-    ],
-    "Textbook": [
-        ["📚 Primary Books", "📖 Secondary Books"],
-        ["🔙 Back to Menu"]
-    ],
-    "Secondary Books": [
-        ["Grade 9", "Grade 10"],
-        ["Grade 11", "Grade 12"],
-        ["🔙 Back to Menu"]
-    ]
-}
+flask_app = Flask(__name__)
+app = Application.builder().token(TOKEN).build()
 
-# Links for books
-book_links = {
-    "Grade 9": "https://t.me/EthioBookGrade1_12/57?single",
-    "Grade 10": "https://t.me/EthioBookGrade1_12/80?single",
-    "Grade 11": "https://t.me/EthioBookGrade1_12/102?single",
-    "Grade 12": "Coming soon!"
-}
+# --- Menu ---
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    keyboard = [[InlineKeyboardButton("Hello 👋", callback_data="hi")]]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await update.message.reply_text("Bot is alive ✅", reply_markup=reply_markup)
 
-# Track user's current menu
-user_menu_state = {}
+async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    await query.edit_message_text("You pressed Hello 👋")
 
-def start(update: Update, context: CallbackContext):
-    chat_id = update.message.chat_id
-    user_menu_state[chat_id] = "main"
-    reply_markup = ReplyKeyboardMarkup(menus["main"], resize_keyboard=True)
-    update.message.reply_text("👋 Welcome! Please choose an option:", reply_markup=reply_markup)
+# Handlers
+app.add_handler(CommandHandler("start", start))
+app.add_handler(CallbackQueryHandler(button_handler))
 
-def handle_message(update: Update, context: CallbackContext):
-    chat_id = update.message.chat_id
-    text = update.message.text
-    current_menu = user_menu_state.get(chat_id, "main")
+# --- Webhook Route ---
+@flask_app.route("/webhook", methods=["POST"])
+async def webhook():
+    data = request.get_json(force=True)
+    update = Update.de_json(data, app.bot)
+    await app.process_update(update)
+    return "ok", 200
 
-    if text == "🔙 Back to Menu":
-        start(update, context)
-        return
-
-    # If user selects a submenu
-    if text in menus:
-        user_menu_state[chat_id] = text
-        reply_markup = ReplyKeyboardMarkup(menus[text], resize_keyboard=True)
-        update.message.reply_text(f"Choose {text} option:", reply_markup=reply_markup)
-
-    # If user selects a book link
-    elif text in book_links:
-        update.message.reply_text(f"📖 {text} link:")
-        update.message.reply_text(book_links[text])
-
-    else:
-        update.message.reply_text("❌ Unknown option. Please use the menu.")
-
-def main():
-    updater = Updater(TOKEN, use_context=True)
-    dp = updater.dispatcher
-
-    dp.add_handler(CommandHandler("start", start))
-    dp.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
-
-    print("✅ Bot started...")
-    updater.start_polling()
-    updater.idle()
-
-if __name__ == "__main__":
-    main()
+# --- Startup (set webhook only once) ---
+@app.on_startup
+async def on_startup(app_: Application):
+    await app_.bot.set_webhook(WEBHOOK_URL)
