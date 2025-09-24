@@ -25,7 +25,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 app.add_handler(CommandHandler("start", start))
 app.add_handler(CallbackQueryHandler(button_handler))
 
-# Webhook route
+# --- Webhook Route ---
 @flask_app.route("/webhook", methods=["POST"])
 async def webhook():
     data = request.get_json(force=True)
@@ -33,10 +33,7 @@ async def webhook():
     await app.process_update(update)
     return "ok", 200
 
-if __name__ == "__main__":
-    async def run():
-        await app.bot.set_webhook(WEBHOOK_URL)
-        port = int(os.getenv("PORT", 8080))
-        flask_app.run(host="0.0.0.0", port=port)
-
-    asyncio.run(run())
+# --- Startup (set webhook only once) ---
+@app.on_startup
+async def on_startup(app_: Application):
+    await app_.bot.set_webhook(WEBHOOK_URL)
